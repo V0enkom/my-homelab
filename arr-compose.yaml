@@ -24,9 +24,14 @@ services:
       - 6881:6881 # qbittorrent torrent port
       - 6789:6789 # nzbget
       - 9696:9696 # prowlarr
+      - 7878:7878 # radarr
+      - 8989:8989 # sonarr
+ #     - 8686:8686 # lidarr
+      - 6767:6767 # bazarr
+      - 5055:5055 # jellyseer
     volumes:
       - ./gluetun:/gluetun
-    env_file: ".env"
+    env_file: ".env" # Не забыть переименовать файл!
     healthcheck:
       test: ping -c 1 www.google.com || exit 1
       interval: 20s
@@ -48,7 +53,7 @@ services:
       - TORRENTING_PORT=${FIREWALL_VPN_INPUT_PORTS}
     volumes:
       - ./qbittorrent:/config
-      - /var/lib/plexmediaserver/data:/data
+      - /home/kostanov/data:/data
     depends_on:
       gluetun:
         condition: service_healthy
@@ -84,7 +89,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./nzbget:/config
-      - /var/lib/plexmediaserver/data:/data
+      - /home/kostanov/data:/data
     depends_on:
       gluetun:
         condition: service_healthy
@@ -120,12 +125,13 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./sonarr:/config
-      - /var/lib/plexmediaserver/data:/data
-    ports:
-      - 8989:8989
-    networks:
-      servarrnetwork:
-        ipv4_address: 172.39.0.3
+      - /home/kostanov/data:/data
+    #ports:
+    #  - 8989:8989
+    network_mode: service:gluetun
+    #networks:
+    #  servarrnetwork:
+    #    ipv4_address: 172.39.0.3
 
   radarr:
     image: lscr.io/linuxserver/radarr:latest
@@ -138,30 +144,32 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./radarr:/config
-      - /var/lib/plexmediaserver/data:/data
-    ports:
-      - 7878:7878
-    networks:
-      servarrnetwork:
-        ipv4_address: 172.39.0.4
+      - /home/kostanov/data:/data
+    #ports:
+    #  - 7878:7878
+    network_mode: service:gluetun
+    #networks:
+    #  servarrnetwork:
+    #    ipv4_address: 172.39.0.4
 
-  lidarr:
-    container_name: lidarr
-    image: lscr.io/linuxserver/lidarr:latest
-    restart: unless-stopped
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - ./lidarr:/config
-      - /var/lib/plexmediaserver/data:/data
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-    ports:
-      - 8686:8686
-    networks:
-      servarrnetwork:
-        ipv4_address: 172.39.0.5
+#  lidarr:
+#    container_name: lidarr
+#    image: lscr.io/linuxserver/lidarr:latest
+#    restart: unless-stopped
+#    volumes:
+#      - /etc/localtime:/etc/localtime:ro
+#      - ./lidarr:/config
+#      - /home/kostanov/data:/data
+#    environment:
+#      - PUID=${PUID}
+#      - PGID=${PGID}
+#      - TZ=${TZ}
+    #ports:
+    #  - 8686:8686
+#    network_mode: service:gluetun
+    #networks:
+    #  servarrnetwork:
+    #    ipv4_address: 172.39.0.5
 
   bazarr:
     image: lscr.io/linuxserver/bazarr:latest
@@ -174,26 +182,32 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./bazarr:/config
-      - /var/lib/plexmediaserver/data:/data
-    ports:
-      - 6767:6767
-    networks:
-      servarrnetwork:
-        ipv4_address: 172.39.0.6
+      - /home/kostanov/data:/data
+    #ports:
+    #  - 6767:6767
+    network_mode: service:gluetun
+    #networks:
+    #  servarrnetwork:
+    #    ipv4_address: 172.39.0.6
 
 
   jellyseerr:
     container_name: jellyseerr
     image: fallenbagel/jellyseerr:latest
+    depends_on:
+      gluetun:
+        condition: service_healthy
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
     volumes:
       - ./jellyseerr:/app/config
-    ports:
-      - 5055:5055
-    networks:
-      servarrnetwork:
-        ipv4_address: 172.39.0.7
+#    ports:
+#      - 5055:5055
+    network_mode: service:gluetun
+#    networks:
+#      servarrnetwork:
+#        ipv4_address: 172.39.0.7
     restart: unless-stopped
+
